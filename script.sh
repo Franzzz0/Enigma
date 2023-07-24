@@ -1,41 +1,4 @@
 #!/usr/bin/env bash
-shift=3
-convert() {
-    message="$1"
-    converted=""
-    for (( i=0; i<${#message}; i++ )); do
-        char="${message:$i:1}"
-        new_char=$(convert_char "$char" "$2")
-        converted+="$new_char"
-    done
-    echo "$converted"
-}
-convert_char() {
-    if [[ "$1" = " " ]]; then
-        echo " "
-    else
-        value=$(get_value "$1")
-        case "$2" in
-            "e")
-                value=$((value + "$shift"));;
-            "d")
-                value=$((value - "$shift"));;
-        esac
-        if [[ $value -gt 90 ]]; then
-            value=$((value - 26))
-        elif [[ $value -lt 65 ]]; then
-            value=$((value + 26))
-        fi
-        letter=$(get_letter "$value")
-        echo "$letter" 
-    fi       
-}
-get_value() {
-    printf "%d\n" "'$1"
-}
-get_letter() {
-    printf "%b\n" "$(printf "\\%03o" "$1")"
-}
 create_file() {
     re_file_name='^[a-zA-Z.]+$'
     re_message='^[A-Z ]+$'
@@ -59,21 +22,34 @@ read_file() {
     cat "$1"
 }
 encrypt_file() {
-    content=$(<"$1")
-    encrypted_content=$(convert "$content" e)
-    encrypted_file_name="$1"".enc"
-    echo "$encrypted_content" >> "$encrypted_file_name"
-    rm "$1"
-    echo "Success"
+    echo "Enter password:"
+    read -r password
+    input_file="$1"
+    output_file="$input_file"".enc"
+    openssl enc -aes-256-cbc -e -pbkdf2 -nosalt -in "$input_file" -out "$output_file" -pass pass:"$password" &>/dev/null
+    exit_code=$?
+    if [[ $exit_code -eq 0 ]]; then
+        rm "$input_file"
+        echo "Success"
+    else
+        rm "$output_file"
+        echo "Fail"
+    fi
 }
 decrypt_file() {
-    file_name="$1"
-    content=$(<"$file_name")
-    decrypted_content=$(convert "$content" d)    
-    decrypted_file_name=${file_name::-4}
-    echo "$decrypted_content" >> "$decrypted_file_name"
-    rm "$file_name"
-    echo "Success"
+    echo "Enter password:"
+    read -r password
+    input_file="$1"
+    output_file=${input_file::-4}
+    openssl enc -aes-256-cbc -d -pbkdf2 -nosalt -in "$input_file" -out "$output_file" -pass pass:"$password" &>/dev/null
+    exit_code=$?
+    if [[ $exit_code -eq 0 ]]; then
+        rm "$input_file"
+        echo "Success"
+    else
+        rm "$output_file"
+        echo "Fail"
+    fi
 }
 process_file() {
     echo "Enter the filename:"
