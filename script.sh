@@ -8,12 +8,6 @@ convert() {
         new_char=$(convert_char "$char" "$2")
         converted+="$new_char"
     done
-    case "$2" in
-        "e")
-            echo "Encrypted message:";;
-        "d")
-            echo "Decrypted message:";;
-    esac
     echo "$converted"
 }
 convert_char() {
@@ -51,7 +45,7 @@ create_file() {
         echo "Enter a message:"
         read -r message
         if [[ "$message" =~ $re_message ]]; then
-            echo "$message" >> "$file_name"
+            echo "$message" > "$file_name"
             echo "The file was created successfully!"
         else
             echo "This is not a valid message!"
@@ -61,11 +55,38 @@ create_file() {
     fi
 }
 read_file() {
+    echo "File content:"
+    cat "$1"
+}
+encrypt_file() {
+    content=$(<"$1")
+    encrypted_content=$(convert "$content" e)
+    encrypted_file_name="$1"".enc"
+    echo "$encrypted_content" >> "$encrypted_file_name"
+    rm "$1"
+    echo "Success"
+}
+decrypt_file() {
+    file_name="$1"
+    content=$(<"$file_name")
+    decrypted_content=$(convert "$content" d)    
+    decrypted_file_name=${file_name::-4}
+    echo "$decrypted_content" >> "$decrypted_file_name"
+    rm "$file_name"
+    echo "Success"
+}
+process_file() {
     echo "Enter the filename:"
     read -r file_name
     if [[ -e "$file_name" ]]; then
-        echo "File content:"
-        cat "$file_name"
+        case "$1" in
+            2)
+                read_file "$file_name";;
+            3)
+                encrypt_file "$file_name";;
+            4)
+                decrypt_file "$file_name";;
+        esac
     else
         echo "File not found!"
     fi
@@ -86,10 +107,8 @@ Enter an option:"
             break;;
         1)
             create_file;;
-        2)
-            read_file;;
-        3|4)
-            echo "Not implemented!";;
+        2|3|4)
+            process_file "$input";;
         *)
             echo "Invalid option!";;
     esac
