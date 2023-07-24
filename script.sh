@@ -42,20 +42,55 @@ get_value() {
 get_letter() {
     printf "%b\n" "$(printf "\\%03o" "$1")"
 }
-echo "Type 'e' to encrypt, 'd' to decrypt a message:
-Enter a command:"
-read -r command
-case "$command" in
-    "e"|"d")
+create_file() {
+    re_file_name='^[a-zA-Z.]+$'
+    re_message='^[A-Z ]+$'
+    echo "Enter the filename:"
+    read -r file_name
+    if [[ "$file_name" =~ $re_file_name ]]; then
         echo "Enter a message:"
-    	read -r message
-    	re_message='^[A-Z ]+$'
-    	if [[ "$message" =~ $re_message ]]; then
-            convert "$message" "$command"
-    	else
+        read -r message
+        if [[ "$message" =~ $re_message ]]; then
+            echo "$message" >> "$file_name"
+            echo "The file was created successfully!"
+        else
             echo "This is not a valid message!"
-    	fi
-    	;;
-    *)
-        echo "Invalid command!";;
-esac
+        fi
+    else
+        echo "File name can contain letters and dots only!"
+    fi
+}
+read_file() {
+    echo "Enter the filename:"
+    read -r file_name
+    if [[ -e "$file_name" ]]; then
+        echo "File content:"
+        cat "$file_name"
+    else
+        echo "File not found!"
+    fi
+}
+echo "Welcome to the Enigma!"
+while true; do
+    echo "
+0. Exit
+1. Create a file
+2. Read a file
+3. Encrypt a file
+4. Decrypt a file
+Enter an option:"
+    read -r input
+    case "$input" in
+        0)
+            echo "See you later!"
+            break;;
+        1)
+            create_file;;
+        2)
+            read_file;;
+        3|4)
+            echo "Not implemented!";;
+        *)
+            echo "Invalid option!";;
+    esac
+done
